@@ -21,7 +21,7 @@ val javadocJar by tasks.registering(Jar::class) {
 
 val githubUrl = "https://github.com"
 val githubPkgUrl = "https://maven.pkg.github.com"
-val owner = "compose-miuix-ui"
+val owner = "myflavor"
 val repository = "miuix"
 val projectUrl = "$githubUrl/$owner/$repository"
 val githubPackagesUrl = "$githubPkgUrl/$owner/$repository"
@@ -94,6 +94,11 @@ publishing {
                     id.set("compose-miuix-ui")
                     name.set("compose-miuix-ui")
                     url.set("$githubUrl/compose-miuix-ui")
+                }
+                developer {
+                    id.set("myflavor")
+                    name.set("myflavor")
+                    url.set("$githubUrl/myflavor")
                 }
             }
         }
