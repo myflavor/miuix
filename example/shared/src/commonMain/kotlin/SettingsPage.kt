@@ -26,6 +26,8 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.extra.SuperArrow
 import top.yukonga.miuix.kmp.extra.SuperDropdown
 import top.yukonga.miuix.kmp.extra.SuperSwitch
+import top.yukonga.miuix.kmp.theme.ThemeColorSpec
+import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import kotlin.random.Random
@@ -64,9 +66,19 @@ fun SettingsPage(
     enableScrollEndHaptic: Boolean,
     onScrollEndHapticChange: (Boolean) -> Unit,
     enableOverScroll: Boolean,
+    enableCornerClip: Boolean,
+    onEnableCornerClipChange: (Boolean) -> Unit,
+    enableDim: Boolean,
+    onEnableDimChange: (Boolean) -> Unit,
+    blockInputDuringTransition: Boolean,
+    onBlockInputDuringTransitionChange: (Boolean) -> Unit,
+    popDirectionFollowsSwipeEdge: Boolean,
+    onPopDirectionFollowsSwipeEdgeChange: (Boolean) -> Unit,
     isWideScreen: Boolean,
     colorMode: MutableState<Int>,
     seedIndex: MutableState<Int>,
+    paletteStyle: MutableState<Int>,
+    colorSpec: MutableState<Int>,
 ) {
     val topAppBarScrollBehavior = MiuixScrollBehavior()
 
@@ -126,8 +138,18 @@ fun SettingsPage(
             enableScrollEndHaptic = enableScrollEndHaptic,
             onScrollEndHapticChange = onScrollEndHapticChange,
             enableOverScroll = enableOverScroll,
+            enableCornerClip = enableCornerClip,
+            onEnableCornerClipChange = onEnableCornerClipChange,
+            enableDim = enableDim,
+            onEnableDimChange = onEnableDimChange,
+            blockInputDuringTransition = blockInputDuringTransition,
+            onBlockInputDuringTransitionChange = onBlockInputDuringTransitionChange,
+            popDirectionFollowsSwipeEdge = popDirectionFollowsSwipeEdge,
+            onPopDirectionFollowsSwipeEdgeChange = onPopDirectionFollowsSwipeEdgeChange,
             colorMode = colorMode,
             seedIndex = seedIndex,
+            paletteStyle = paletteStyle,
+            colorSpec = colorSpec,
             isWideScreen = isWideScreen,
         )
     }
@@ -168,8 +190,18 @@ fun SettingsContent(
     enableScrollEndHaptic: Boolean,
     onScrollEndHapticChange: (Boolean) -> Unit,
     enableOverScroll: Boolean,
+    enableCornerClip: Boolean,
+    onEnableCornerClipChange: (Boolean) -> Unit,
+    enableDim: Boolean,
+    onEnableDimChange: (Boolean) -> Unit,
+    blockInputDuringTransition: Boolean,
+    onBlockInputDuringTransitionChange: (Boolean) -> Unit,
+    popDirectionFollowsSwipeEdge: Boolean,
+    onPopDirectionFollowsSwipeEdgeChange: (Boolean) -> Unit,
     colorMode: MutableState<Int>,
     seedIndex: MutableState<Int>,
+    paletteStyle: MutableState<Int>,
+    colorSpec: MutableState<Int>,
     isWideScreen: Boolean,
 ) {
     val navigator = LocalNavigator.current
@@ -180,6 +212,8 @@ fun SettingsContent(
     val floatingToolbarOrientationOptions = remember { listOf("Horizontal", "Vertical") }
     val fabPositionOptions = remember { listOf("Start", "Center", "End", "EndOverlay") }
     val colorModeOptions = remember { listOf("System", "Light", "Dark", "MonetSystem", "MonetLight", "MonetDark") }
+    val paletteStyleOptions = remember { ThemePaletteStyle.entries.map { it.name } }
+    val colorSpecOptions = remember { ThemeColorSpec.entries.map { it.name } }
     val keyColorOptions = remember { listOf("Default") + ui.KeyColors.map { it.first } }
 
     LazyColumn(
@@ -308,7 +342,7 @@ fun SettingsContent(
                     selectedIndex = colorMode.value,
                     onSelectedIndexChange = { colorMode.value = it },
                 )
-                AnimatedVisibility(visible = colorMode.value in listOf(3, 4, 5)) {
+                AnimatedVisibility(visible = colorMode.value in 3..5) {
                     SuperDropdown(
                         title = "Key Color",
                         items = keyColorOptions,
@@ -316,6 +350,50 @@ fun SettingsContent(
                         onSelectedIndexChange = { seedIndex.value = it },
                     )
                 }
+                AnimatedVisibility(visible = colorMode.value in 3..5 && seedIndex.value > 0) {
+                    Column {
+                        SuperDropdown(
+                            title = "Palette Style",
+                            items = paletteStyleOptions,
+                            selectedIndex = paletteStyle.value,
+                            onSelectedIndexChange = { paletteStyle.value = it },
+                        )
+                        SuperDropdown(
+                            title = "Color Spec",
+                            items = colorSpecOptions,
+                            selectedIndex = colorSpec.value,
+                            onSelectedIndexChange = { colorSpec.value = it },
+                        )
+                    }
+                }
+            }
+            Card(
+                modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
+            ) {
+                SuperSwitch(
+                    title = "Enable Corner Clip",
+                    summary = "Clip the top scene with rounded corners during transitions",
+                    checked = enableCornerClip,
+                    onCheckedChange = onEnableCornerClipChange,
+                )
+                SuperSwitch(
+                    title = "Enable Dim",
+                    summary = "Dim the scene behind during transitions",
+                    checked = enableDim,
+                    onCheckedChange = onEnableDimChange,
+                )
+                SuperSwitch(
+                    title = "Block Input During Transition",
+                    summary = "Block touch input on the non-target scene",
+                    checked = blockInputDuringTransition,
+                    onCheckedChange = onBlockInputDuringTransitionChange,
+                )
+                SuperSwitch(
+                    title = "Pop Follows Swipe Edge",
+                    summary = "Pop animation direction follows the finger swipe edge",
+                    checked = popDirectionFollowsSwipeEdge,
+                    onCheckedChange = onPopDirectionFollowsSwipeEdgeChange,
+                )
             }
             Card(
                 modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),

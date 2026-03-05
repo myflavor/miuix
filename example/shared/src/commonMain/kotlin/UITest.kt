@@ -51,11 +51,12 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.navigation3.adaptive.utils.shouldShowSplitPane
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.NavDisplayTransitionEffects
 import kotlinx.coroutines.launch
 import navigation3.Navigator
 import navigation3.Route
@@ -88,6 +89,7 @@ import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import utils.FPSMonitor
+import utils.shouldShowSplitPane
 
 private object UIConstants {
     const val MAIN_PAGE_INDEX = 0
@@ -129,6 +131,10 @@ data class UIState(
     val enableScrollEndHaptic: Boolean = true,
     val enableOverScroll: Boolean = true,
     val isWideScreen: Boolean = false,
+    val enableCornerClip: Boolean = true,
+    val enableDim: Boolean = true,
+    val blockInputDuringTransition: Boolean = true,
+    val popDirectionFollowsSwipeEdge: Boolean = false,
 )
 
 val LocalNavigator = staticCompositionLocalOf<Navigator> { error("No navigator found!") }
@@ -139,6 +145,8 @@ val LocalHandlePageChange = staticCompositionLocalOf<(Int) -> Unit> { error("No 
 fun UITest(
     colorMode: MutableState<Int>,
     seedIndex: MutableState<Int>,
+    paletteStyle: MutableState<Int>,
+    colorSpec: MutableState<Int>,
     padding: PaddingValues,
     enableOverScroll: Boolean,
 ) {
@@ -196,6 +204,8 @@ fun UITest(
                         onUiStateChange = { uiState = it },
                         colorMode = colorMode,
                         seedIndex = seedIndex,
+                        paletteStyle = paletteStyle,
+                        colorSpec = colorSpec,
                         padding = padding,
                         navigationItems = navigationItems,
                     )
@@ -234,12 +244,19 @@ fun UITest(
 
         val entries = rememberDecoratedNavEntries(
             backStack = backStack,
+            entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
             entryProvider = entryProvider,
         )
 
         NavDisplay(
             entries = entries,
             onBack = { navigator.pop() },
+            transitionEffects = NavDisplayTransitionEffects(
+                enableCornerClip = uiState.enableCornerClip,
+                dimAmount = if (uiState.enableDim) 0.5f else 0f,
+                blockInputDuringTransition = uiState.blockInputDuringTransition,
+                popDirectionFollowsSwipeEdge = uiState.popDirectionFollowsSwipeEdge,
+            ),
         )
     }
 
@@ -263,6 +280,8 @@ private fun Home(
     onUiStateChange: (UIState) -> Unit,
     colorMode: MutableState<Int>,
     seedIndex: MutableState<Int>,
+    paletteStyle: MutableState<Int>,
+    colorSpec: MutableState<Int>,
     padding: PaddingValues,
     navigationItems: List<NavigationItem>,
 ) {
@@ -282,6 +301,8 @@ private fun Home(
                 onUiStateChange = onUiStateChange,
                 colorMode = colorMode,
                 seedIndex = seedIndex,
+                paletteStyle = paletteStyle,
+                colorSpec = colorSpec,
                 snackbarHostState = snackbarHostState,
                 layoutDirection = layoutDirection,
             )
@@ -291,7 +312,9 @@ private fun Home(
                 uiState = uiState,
                 onUiStateChange = onUiStateChange,
                 colorMode = colorMode,
+                paletteStyle = paletteStyle,
                 seedIndex = seedIndex,
+                colorSpec = colorSpec,
                 snackbarHostState = snackbarHostState,
                 padding = padding,
             )
@@ -306,6 +329,8 @@ private fun WideScreenContent(
     onUiStateChange: (UIState) -> Unit,
     colorMode: MutableState<Int>,
     seedIndex: MutableState<Int>,
+    paletteStyle: MutableState<Int>,
+    colorSpec: MutableState<Int>,
     snackbarHostState: SnackbarHostState,
     layoutDirection: LayoutDirection,
 ) {
@@ -356,6 +381,8 @@ private fun WideScreenContent(
                 onUiStateChange = onUiStateChange,
                 colorMode = colorMode,
                 seedIndex = seedIndex,
+                paletteStyle = paletteStyle,
+                colorSpec = colorSpec,
                 modifier = Modifier
                     .imePadding()
                     .padding(end = padding.calculateEndPadding(layoutDirection)),
@@ -371,6 +398,8 @@ private fun CompactScreenLayout(
     onUiStateChange: (UIState) -> Unit,
     colorMode: MutableState<Int>,
     seedIndex: MutableState<Int>,
+    paletteStyle: MutableState<Int>,
+    colorSpec: MutableState<Int>,
     snackbarHostState: SnackbarHostState,
     padding: PaddingValues,
 ) {
@@ -408,6 +437,8 @@ private fun CompactScreenLayout(
             onUiStateChange = onUiStateChange,
             colorMode = colorMode,
             seedIndex = seedIndex,
+            paletteStyle = paletteStyle,
+            colorSpec = colorSpec,
             modifier = Modifier
                 .padding(
                     top = padding.calculateTopPadding(),
@@ -601,8 +632,10 @@ fun AppPager(
     padding: PaddingValues,
     uiState: UIState,
     onUiStateChange: (UIState) -> Unit,
+    paletteStyle: MutableState<Int>,
     colorMode: MutableState<Int>,
     seedIndex: MutableState<Int>,
+    colorSpec: MutableState<Int>,
     modifier: Modifier = Modifier,
 ) {
     HorizontalPager(
@@ -680,9 +713,19 @@ fun AppPager(
                     enableScrollEndHaptic = uiState.enableScrollEndHaptic,
                     onScrollEndHapticChange = { onUiStateChange(uiState.copy(enableScrollEndHaptic = it)) },
                     enableOverScroll = uiState.enableOverScroll,
+                    enableCornerClip = uiState.enableCornerClip,
+                    onEnableCornerClipChange = { onUiStateChange(uiState.copy(enableCornerClip = it)) },
+                    enableDim = uiState.enableDim,
+                    onEnableDimChange = { onUiStateChange(uiState.copy(enableDim = it)) },
+                    blockInputDuringTransition = uiState.blockInputDuringTransition,
+                    onBlockInputDuringTransitionChange = { onUiStateChange(uiState.copy(blockInputDuringTransition = it)) },
+                    popDirectionFollowsSwipeEdge = uiState.popDirectionFollowsSwipeEdge,
+                    onPopDirectionFollowsSwipeEdgeChange = { onUiStateChange(uiState.copy(popDirectionFollowsSwipeEdge = it)) },
                     isWideScreen = uiState.isWideScreen,
                     colorMode = colorMode,
                     seedIndex = seedIndex,
+                    paletteStyle = paletteStyle,
+                    colorSpec = colorSpec,
                 )
             }
         },
